@@ -1,18 +1,54 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+
+  <div class="handle-box">
+    <el-select v-model="jobName" clearable placeholder="请选择项目">
+      <el-option v-for="job of this.jobsAllData"
+        :key="job.name" :label="job.name" :value="job.name">
+      </el-option>
+    </el-select>
+
+    <el-button type="primary" icon="search" @click="getData" :loading="loading">发布</el-button>
   </div>
+
 </template>
 
 <script>
-// @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
+  import fs from 'fs';
+  import path from 'path';
+  import jobs from '../config/jobs';
+  
+  export default {
+    data() {
+      return {
+        jobsAllData: jobs.config,
+        jobName : null,
+        loading : false,
+      }
+    },
 
-export default {
-  name: 'home',
-  components: {
-    HelloWorld
-  }
+    created(){
+      console.log('进入created');
+      
+    },
+
+    methods: {
+      getData(){
+        console.log('getData中...');
+      }
+    }
 }
 </script>
+
+<style scoped>
+.handle-box{
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
+.handle-select{
+    width: 120px;
+}
+.handle-input{
+    width: 200px;
+    display: inline-block;
+}
+</style>

@@ -4,12 +4,10 @@ const moment = require('moment');
 const path = require("path");
 
 function build(job){
-    console.log('1/3 开始本地打包...');
+    console.log('1/2 开始本地打包...');
     packageJar(job);
-    console.log('2/3 尝试修改服务器上jar文件的名字');
-    loginAndBackupJar(job);
-    console.log('3/3 开始上传本地最新的jar文件');
-    loginAndUploadJar(job);
+    console.log('2/2 尝试备份原来的jar并上传本地最新的jar文件');
+    loginAndBackupJarAndUpload(job);
 }
 
 function packageJar(job){
@@ -17,7 +15,7 @@ function packageJar(job){
     return childProcess.execSync(command).toString();
 }
 
-function loginAndBackupJar(job){
+function loginAndBackupJarAndUpload(job){
     let sftp = new sftpClient();
     sftp.connect({
         host: job.remoteAddr,
@@ -29,6 +27,10 @@ function loginAndBackupJar(job){
         let backupJarPath = job.remoteDir + getBackupName(job.jarName);
         return sftp.rename(jarPath, backupJarPath);
     }).then(data => {
+        let localJarPath = job.localDir + path.sep + 'target' + path.sep + job.jarName;
+        let targetJarPath = job.remoteDir + job.jarName;
+        return sftp.put(localJarPath, targetJarPath);  
+    }).then(data => {
         console.log(data);
         sftp.end();
     }).catch(err =>{
@@ -37,7 +39,7 @@ function loginAndBackupJar(job){
     });
 }
 
-function loginAndUploadJar(job){
+/* async function loginAndUploadJar(job){
     let sftp = new sftpClient();
     sftp.connect({
         host: job.remoteAddr,
@@ -55,7 +57,7 @@ function loginAndUploadJar(job){
         console.log(err);
         sftp.end();
     });
-}
+} */
 
 function getBackupName(originName){
     return originName + '.bak' + moment().format('YYYYMMDDHHmmss');

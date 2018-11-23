@@ -1,6 +1,7 @@
 const jobs = require('./jobs');
 const springBuilder = require('./builder/spring');
 const springBootBuilder = require('./builder/springboot');
+const vueBuilder = require('./builder/vue');
 const inquirer = require('inquirer');
 
 const jobNames = getJobNames();
@@ -31,6 +32,8 @@ function lookupJob(name){
       return {builder : springBuilder, job};
     }else if(job.name === name && job.type === 'springboot'){
       return {builder : springBootBuilder, job};
+    }else if(job.name === name && job.type === 'vue'){
+      return {builder : vueBuilder, job};
     }
   }
   return null;

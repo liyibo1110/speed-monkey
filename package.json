@@ -8,6 +8,7 @@
   "dependencies": {
     "inquirer": "^6.2.0",
     "moment": "^2.22.2",
+    "node-ssh": "^5.1.2",
     "ssh2-sftp-client": "^2.4.2"
   },
   "devDependencies": {}

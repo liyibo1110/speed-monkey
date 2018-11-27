@@ -1,86 +1,83 @@
 const childProcess = require('child_process');
 const sftpClient = require('ssh2-sftp-client');
+//const sftpClient = require('node-ssh');
 const moment = require('moment');
 const path = require("path");
 const fs = require("fs");
 
-function build(job){
-    
+async function build(job){
+    console.log('1/3 开始本地打包...');
     packageDist(job);
-    loginAndBackupDistAndUpload(job);
+    await loginAndBackupDist(job);
+    console.log('2/3 尝试备份原来的dist目录');
+    
     //putAllToRemote(job, 'dist');
 }
 
 function packageDist(job){
-    console.log('1/2 开始本地打包...');
     let command = ['cd', '/d', job.localDir, '&&', 'npm', 'run', 'build'].join(' ');
-    return childProcess.execSync(command).toString();
+    childProcess.execSync(command);
 }
 
-function loginAndBackupDistAndUpload(job){
-    console.log('2/2 尝试备份原来的dist目录，然后开始递归上传目录');
+async function loginAndBackupDist(job){
     let sftp = new sftpClient();
-    sftp.connect({
+    await sftp.connect({
         host: job.remoteAddr,
         port: job.remotePort,
         username: job.username,
         password: job.password
     }).then(() => {
         let distPath = job.remoteDir + "/dist";
-        //console.log(distPath);
         let backupDistPath = getBackupName(distPath);
-        //console.log(backupDistPath);
         return sftp.rename(distPath, backupDistPath);
     }).then(data => {
-        return sftp.mkdir(job.remoteDir + "/dist");  
-    })
-    .then(data => {
         console.log(data);
-        sftp.end();
-    })
-    .then(data => {
-        putAllToRemote(job, 'dist');
-    }) 
-    .catch(err =>{
+        return sftp.end();
+    }).catch(err =>{
         console.log(err);
-        sftp.end();
+        return sftp.end();
     });
 }
 
-function putAllToRemote(job, localPath){
+/* function putAllToRemote(job, localPath){
     //console.log('3/3 将本地dist目录递归上传服务器...');
     let localDistPath = job.localDir + path.sep + localPath;
     let remoteDistPath = job.remoteDir + '/' + localPath.replace(/\\/g, '/');
-    fs.readdir(localDistPath, (err, files) => {
-        files.forEach((file) => {
-            //console.log(file);
-            let stat = fs.statSync(localDistPath + path.sep + file);
-            if(stat.isFile()){
-                //是文件则PUT上传
-                putSingleToRemote(job, localDistPath + path.sep + file, remoteDistPath + '/' + file);
-            }else{
-                //是目录则先建立目录，然后递归调用
-                let sftp = new sftpClient();
-                sftp.connect({
-                    host: job.remoteAddr,
-                    port: job.remotePort,
-                    username: job.username,
-                    password: job.password
-                }).then(data => {
-                    return sftp.mkdir(job.remoteDir + '/' + localPath.replace(/\\/g, '/') + '/' + file, true);    
-                }).then(data => {
-                    putAllToRemote(job, localPath + path.sep + file);
-                    sftp.end();
-                }).catch(data => {
-                    console.log(data);
-                    sftp.end();
-                });
-            }
-        });
+    let files = fs.readdirSync(localDistPath);
+    files.forEach((file) => {
+        //console.log(file);
+        let stat = fs.statSync(localDistPath + path.sep + file);
+        if(stat.isFile()){
+            //是文件则PUT上传
+            putSingleToRemote(job, localDistPath + path.sep + file, remoteDistPath + '/' + file);
+            srcFiles.push(localDistPath + path.sep + file);
+            destFiles.push(remoteDistPath + '/' + file);
+        }else{
+            //是目录则先建立目录，然后递归调用
+            let sftp = new sftpClient();
+            sftp.connect({
+                host: job.remoteAddr,
+                port: job.remotePort,
+                username: job.username,
+                password: job.password
+            }).then(data => {
+                return sftp.mkdir(job.remoteDir + '/' + localPath.replace(/\\/g, '/') + '/' + file, true);    
+            }).then(data => {
+                putAllToRemote(job, localPath + path.sep + file);
+                sftp.end();
+            }).catch(data => {
+                console.log(data);
+                sftp.end();
+            });
+        }
     });
-}
+} */
 
-function putSingleToRemote(job, srcFile, destFile){
+/* function putSingleToRemote(job, srcFile, destFile){
+    console.log('进来了');
+    srcFiles.push(srcFile);
+    destFiles.push(destFile);
+    console.log('变成了：' + srcFiles.length);
     let sftp = new sftpClient();
     sftp.connect({
         host: job.remoteAddr,
@@ -95,8 +92,8 @@ function putSingleToRemote(job, srcFile, destFile){
     }).catch(err =>{
         console.log(err);
         sftp.end();
-    });
-}
+    }); 
+} */
 
 function getBackupName(originDist){
     return originDist + moment().format('YYYYMMDDHHmmss');

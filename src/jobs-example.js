@@ -1,24 +1,3 @@
-# speed-monkey
-
-## 版本更新
-```
-2018-11-28 v0.1.1
-1. 新增支持vue项目的远程发布。
-```
-
-## 安装依赖
-```
-npm install
-```
-
-### 运行命令
-```
-npm run start
-```
-
-### 配置文件说明
-```
-将src目录的jobs-example.js文件按需修改，然后改名为jobs.js，例子内容格式为：
 module.exports = 
     [
         {
@@ -54,4 +33,3 @@ module.exports =
             remoteDir : '/opt/fe/vue-project/'
         }
     ];
-```

@@ -1,17 +1,17 @@
 const childProcess = require('child_process');
 const sftpClient = require('ssh2-sftp-client');
-//const sftpClient = require('node-ssh');
+const node_ssh = require('node-ssh');
 const moment = require('moment');
 const path = require("path");
-const fs = require("fs");
 
 async function build(job){
     console.log('1/3 开始本地打包...');
     packageDist(job);
+    console.log('2/3 备份原来的dist目录');
     await loginAndBackupDist(job);
-    console.log('2/3 尝试备份原来的dist目录');
-    
-    //putAllToRemote(job, 'dist');
+    console.log('3/3 上传新的dist目录');
+    await uploadDist(job);
+    console.log('上传完成');
 }
 
 function packageDist(job){
@@ -27,7 +27,7 @@ async function loginAndBackupDist(job){
         username: job.username,
         password: job.password
     }).then(() => {
-        let distPath = job.remoteDir + "/dist";
+        let distPath = job.remoteDir + "dist";
         let backupDistPath = getBackupName(distPath);
         return sftp.rename(distPath, backupDistPath);
     }).then(data => {
@@ -36,6 +36,24 @@ async function loginAndBackupDist(job){
     }).catch(err =>{
         console.log(err);
         return sftp.end();
+    });
+}
+
+async function uploadDist(job){
+    let ssh = new node_ssh();
+    await ssh.connect({
+        host: job.remoteAddr,
+        port: job.remotePort,
+        username: job.username,
+        password: job.password
+    }).then(() => {
+        return ssh.putDirectory(job.localDir + path.sep + 'dist', job.remoteDir + 'dist', {
+            recursive: true
+        });
+    }).then(() => {
+        return Promise.resolve(ssh.dispose());
+    }).catch(() => {
+        return Promise.reject(ssh.dispose());
     });
 }
 

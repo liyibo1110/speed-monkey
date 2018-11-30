@@ -3,21 +3,22 @@ const sftpClient = require('ssh2-sftp-client');
 const moment = require('moment');
 const path = require("path");
 
-function build(job){
+async function build(job){
     console.log('1/2 开始本地打包...');
     packageJar(job);
     console.log('2/2 尝试备份原来的jar并上传本地最新的jar文件');
-    loginAndBackupJarAndUpload(job);
+    await loginAndBackupJarAndUpload(job);
+    console.log('上传完成');
 }
 
 function packageJar(job){
-    let command = ['cd', '/d', job.localDir, '&&', 'mvn', 'clean', 'package'].join(' ');
+    let command = ['cd', '/d', job.localDir, '&&', 'mvn', 'clean', 'package', job.mvnParam || ''].join(' ');
     return childProcess.execSync(command).toString();
 }
 
-function loginAndBackupJarAndUpload(job){
+async function loginAndBackupJarAndUpload(job){
     let sftp = new sftpClient();
-    sftp.connect({
+    await sftp.connect({
         host: job.remoteAddr,
         port: job.remotePort,
         username: job.username,
@@ -32,10 +33,10 @@ function loginAndBackupJarAndUpload(job){
         return sftp.put(localJarPath, targetJarPath);  
     }).then(data => {
         console.log(data);
-        sftp.end();
+        return sftp.end();
     }).catch(err =>{
         console.log(err);
-        sftp.end();
+        return sftp.end();
     });
 }
 

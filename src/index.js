@@ -6,6 +6,14 @@ const inquirer = require('inquirer');
 
 const jobNames = getJobNames();
 
+/**
+ * 增加Ctrl+C妥善处理
+ */
+process.on('SIGINT', () => {
+    console.log('EXIT NOW!');
+    process.exit();
+});
+
 inquirer.prompt([
     {
       name : 'name', 
@@ -14,6 +22,7 @@ inquirer.prompt([
       choices : jobNames,
     }
   ]).then(answer => {
+    // console.log('进入answer')
     let jobObj = lookupJob(answer.name);
     jobObj.builder.build(jobObj.job);
   });
